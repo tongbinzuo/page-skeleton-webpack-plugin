@@ -21,7 +21,8 @@ const myFs = new MemoryFileSystem()
 class Server extends EventEmitter {
   constructor(options) {
     super()
-    Object.keys(options).forEach(k => Object.assign(this, { [k]: options[k] }))
+    Object.keys(options)
+      .forEach(k => Object.assign(this, { [k]: options[k] }))
     this.options = options
     this.host = getLocalIpAddress()
     // 用于缓存写入 shell.html 文件的 html
@@ -48,12 +49,14 @@ class Server extends EventEmitter {
       .forEach((file) => {
         app.get(`/${staticPath}/${file}`, (req, res) => {
           res.setHeader('Content-Type', 'application/javascript')
-          fs.createReadStream(path.join(__dirname, '..', 'client', file)).pipe(res)
+          fs.createReadStream(path.join(__dirname, '..', 'client', file))
+            .pipe(res)
         })
       })
 
     app.get('/preview.html', async (req, res) => {
-      fs.createReadStream(path.resolve(__dirname, '..', 'preview/dist/index.html')).pipe(res)
+      fs.createReadStream(path.resolve(__dirname, '..', 'preview/dist/index.html'))
+        .pipe(res)
     })
 
     app.get('/:filename', async (req, res) => {
@@ -105,12 +108,14 @@ class Server extends EventEmitter {
 
   // 启动服务
   async listen() {
+    console.log('Server listen')
     /* eslint-disable no-multi-assign */
     const app = this.app = express()
     const listenServer = this.listenServer = http.createServer(app)
     /* eslint-enable no-multi-assign */
     this.initRouters()
     this.initSocket()
+    this.log.info('options', this.options)
     listenServer.listen(this.port, () => {
       this.log.info(`page-skeleton server listen at port: ${this.port}`)
     })
@@ -134,8 +139,10 @@ class Server extends EventEmitter {
       const msg = JSON.parse(data)
       switch (msg.type) {
         case 'generate': {
+          log.info('resiveSocketData', msg)
           if (!msg.data) return log.info(msg)
-          this.origin = msg.data
+          log.info('preGenMsg')
+          this.origin = msg.data  // 域名
           const origin = msg.data
           const preGenMsg = 'begin to generator skeleton screen'
           log.info(preGenMsg)
@@ -221,7 +228,8 @@ class Server extends EventEmitter {
           }
           break
         }
-        default: break
+        default:
+          break
       }
     }
   }

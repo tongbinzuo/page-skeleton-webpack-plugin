@@ -58,6 +58,7 @@ class Skeleton {
   }
 
   async genHtml(url, route) {
+    console.log('genHtml Url', url)
     const stylesheetAstObjects = {}
     const stylesheetContents = {}
 
@@ -82,14 +83,15 @@ class Skeleton {
       }
 
       if (ct.indexOf('text/css') > -1 || /\.css$/i.test(requestUrl)) {
-        response.text().then((text) => {
-          const ast = parse(text, {
-            parseValue: false,
-            parseRulePrelude: false
+        response.text()
+          .then((text) => {
+            const ast = parse(text, {
+              parseValue: false,
+              parseRulePrelude: false
+            })
+            stylesheetAstObjects[requestUrl] = toPlainObject(ast)
+            stylesheetContents[requestUrl] = text
           })
-          stylesheetAstObjects[requestUrl] = toPlainObject(ast)
-          stylesheetContents[requestUrl] = text
-        })
       }
     })
     page.on('pageerror', (error) => {
@@ -169,7 +171,8 @@ class Skeleton {
 
         const clean = (children, cb) => children.filter((child) => {
           if (child.type === 'Rule') {
-            const values = child.prelude.value.split(',').map(x => x.trim())
+            const values = child.prelude.value.split(',')
+              .map(x => x.trim())
             const keepValues = values.filter((selectorString) => {
               if (decisionsCache[selectorString]) {
                 return decisionsCache[selectorString]
@@ -202,10 +205,12 @@ class Skeleton {
       links
         .filter(link => (
           link.href &&
-            (link.rel === 'stylesheet' ||
-              link.href.toLowerCase().endsWith('.css')) &&
-            !link.href.toLowerCase().startsWith('blob:') &&
-            link.media !== 'print'
+          (link.rel === 'stylesheet' ||
+            link.href.toLowerCase()
+              .endsWith('.css')) &&
+          !link.href.toLowerCase()
+            .startsWith('blob:') &&
+          link.media !== 'print'
         ))
         .forEach((stylesheet) => {
           if (!stylesheetAstObjects[stylesheet.href]) {
@@ -229,7 +234,8 @@ class Skeleton {
     const allCleanedCSS = cleanedCSS.map((ast) => {
       const cleanedAst = fromPlainObject(ast)
       return generate(cleanedAst)
-    }).join('\n')
+    })
+      .join('\n')
 
     const finalCss = collectImportantComments(allCleanedCSS)
     // finalCss = minify(finalCss).css ? `html-minifier` use `clean-css` as css minifier
@@ -260,10 +266,14 @@ class Skeleton {
   }
 
   async renderRoutes(origin, routes = this.options.routes) {
-    return Promise.all(routes.map((route) => {
+    const p_arr = routes.map((route) => {
       const url = `${origin}${route}`
       return this.genHtml(url, route)
-    }))
+    })
+    if (p_arr.length === 0) {
+      p_arr.push(this.genHtml(origin, ''))
+    }
+    return Promise.all(p_arr)
   }
 
   async destroy() {

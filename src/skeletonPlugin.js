@@ -13,18 +13,21 @@ const EVENT_LIST = process.env.NODE_ENV === 'production' ? ['watch-close', 'fail
 const PLUGIN_NAME = 'pageSkeletonWebpackPlugin'
 
 function SkeletonPlugin(options = {}) {
+  console.log('SkeletonPlugin', options)
   const validationErrors = webpack.validateSchema(optionsSchema, options)
   if (validationErrors.length) {
     throw new OptionsValidationError(validationErrors)
   }
   this.options = merge({ staticPath }, defaultOptions, options)
+  console.log('SkeletonPlugin options', this.options)
   this.server = null
   this.originalHtml = ''
 }
 
 SkeletonPlugin.prototype.createServer = function () { // eslint-disable-line func-names
   const server = this.server = new Server(this.options) // eslint-disable-line no-multi-assign
-  server.listen().catch(err => server.log.warn(err))
+  server.listen()
+    .catch(err => server.log.warn(err))
 }
 
 SkeletonPlugin.prototype.insertScriptToClient = function (htmlPluginData) { // eslint-disable-line func-names
